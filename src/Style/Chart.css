@@ -1,0 +1,24 @@
+.chart-container {
+    flex: 1;
+    padding: 20px;
+    background-color: #292942;
+    border-radius: 8px;
+  }
+  
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .chart-title {
+    font-size: 1.2em;
+    color: white;
+  }
+  
+  .chart {
+    position: relative;
+    height: 400px;
+  }
+  
