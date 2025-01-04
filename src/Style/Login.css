@@ -1,7 +1,7 @@
 /* login.css */
 .container{
     width: 100vw;
-    background: linear-gradient(to right, grey, #2b2b2b);
+    background: linear-gradient(to right, rgba(80, 3, 80, 0.493), rgba(56, 1, 56, 0.356));
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -14,11 +14,11 @@
     gap: .5rem;
 }
 .auth-container {
-    background-color: #1a1a1a;
+    background: linear-gradient(to right, rgba(80, 3, 80, 0.493), rgba(56, 1, 56, 0.356));
     padding: 2rem 3rem;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    color: #7fafff; /* Lime Blue */
+    color: #FCBF32; 
     width: 100%;
     max-width: 400px;
     
@@ -48,7 +48,7 @@
   .form-group input {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid orangered;
     border-radius: 4px;
   }
   
@@ -62,7 +62,7 @@
   .btn {
     width: 100%;
     padding: 10px;
-    background-color: #6b73ff;
+    background: linear-gradient(to right, orangered, #FCBF32);
     color: white;
     border: none;
     border-radius: 4px;
