@@ -14,7 +14,8 @@
     gap: .5rem;
 }
 .auth-container {
-    background: linear-gradient(to right, rgba(80, 3, 80, 0.493), rgba(56, 1, 56, 0.356));
+    /* background: linear-gradient(to right, rgba(80, 3, 80, 0.493), rgba(56, 1, 56, 0.356)); */
+    background-color: transparent;
     padding: 2rem 3rem;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);

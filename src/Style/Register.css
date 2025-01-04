@@ -14,7 +14,8 @@
     gap: .5rem;
 }
 .auth-container {
-    background-color: #1a1a1a;
+    /* background-color: #1a1a1a; */
+    background-color: transparent;
     padding: 2rem 3rem;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
