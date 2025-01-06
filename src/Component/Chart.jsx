@@ -1,76 +1,55 @@
-import React from "react";
-import {
-  Chart as ChartJS,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
+import React, { useEffect, useRef } from "react";
+import { createChart } from "lightweight-charts";
+import DerivAPI from '@deriv/deriv-api'
 import '../Style/Chart.css'
 
-// Register Chart.js modules
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
-
 const Chart = () => {
-  // Example data and configuration for the chart
-  const data = {
-    labels: ["20:30", "21:00", "21:30", "22:00", "22:30", "23:00"],
-    datasets: [
-      {
-        label: "Stock Price",
-        data: [227.5, 227.8, 227.6, 227.7, 227.9, 228.0], // Example data points
-        borderColor: "#6b73ff",
-        backgroundColor: "rgba(107, 115, 255, 0.2)",
-        pointBackgroundColor: "#6b73ff",
-        tension: 0.4,
-      },
-    ],
-  };
+  const chartContainerRef = useRef(null);
+  const chart = useRef(null);
+  const candleSeries = useRef(null);
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        grid: {
-          color: "#3a3a4e",
-        },
-        ticks: {
-          color: "#aaa",
-        },
-      },
-      y: {
-        grid: {
-          color: "#3a3a4e",
-        },
-        ticks: {
-          color: "#aaa",
-        },
-      },
-    },
-    plugins: {
-      tooltip: {
-        backgroundColor: "#1e1e2e",
-        titleColor: "#fff",
-        bodyColor: "#aaa",
-        borderColor: "#6b73ff",
-        borderWidth: 1,
-      },
-    },
-  };
+  useEffect(() => {
+    // Initialize Lightweight Chart
+    chart.current = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
+    });
 
-  return (
-    <div className="chart-container">
-      <div className="chart-header">
-        <div className="chart-title">Binário - Apple (OTC) 84%</div>
-      </div>
-      <div className="chart" style={{ height: "400px" }}>
-        <Line data={data} options={options} />
-      </div>
-    </div>
-  );
+    candleSeries.current = chart.current.addCandlestickSeries();
+
+    // Initialize Deriv API
+    const api = new DerivAPI({
+      app_id: "your-app-id", // Replace with your actual app ID
+      endpoint: "wss://ws.binaryws.com/websockets/v3?app_id=your-app-id",
+    });
+
+    // Fetch Data
+    const getMarketData = async () => {
+      const ticks = await api.subscribe({
+        ticks: "R_100",
+        subscribe: 1,
+      });
+
+      ticks.on("message", (msg) => {
+        const { tick } = msg;
+        candleSeries.current.update({
+          time: tick.epoch,
+          open: tick.quote,
+          high: tick.quote,
+          low: tick.quote,
+          close: tick.quote,
+        });
+      });
+    };
+
+    getMarketData();
+
+    return () => {
+      if (chart.current) chart.current.remove();
+    };
+  }, []);
+
+  return <div ref={chartContainerRef} />;
 };
 
 export default Chart;

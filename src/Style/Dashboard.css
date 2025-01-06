@@ -4,6 +4,13 @@
     background-color: #1e1e2e;
     color: white;
   }
+  .dashboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
   
   .dashboard-main {
     display: flex;
