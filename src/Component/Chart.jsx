@@ -1,55 +1,64 @@
 import React, { useEffect, useRef } from "react";
 import { createChart } from "lightweight-charts";
-import DerivAPI from '@deriv/deriv-api'
-import '../Style/Chart.css'
 
-const Chart = () => {
-  const chartContainerRef = useRef(null);
-  const chart = useRef(null);
-  const candleSeries = useRef(null);
+function Chart() {
+  const chartContainerRef = useRef();
+  const chartRef = useRef();
 
   useEffect(() => {
-    // Initialize Lightweight Chart
-    chart.current = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 300,
+    const chart = createChart(chartContainerRef.current, {
+      width: 600,
+      height: 400,
     });
 
-    candleSeries.current = chart.current.addCandlestickSeries();
+    const candleSeries = chart.addCandlestickSeries();
+    chartRef.current = chart;
 
-    // Initialize Deriv API
-    const api = new DerivAPI({
-      app_id: "your-app-id", // Replace with your actual app ID
-      endpoint: "wss://ws.binaryws.com/websockets/v3?app_id=your-app-id",
-    });
+    const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=67003');
 
-    // Fetch Data
-    const getMarketData = async () => {
-      const ticks = await api.subscribe({
-        ticks: "R_100",
-        subscribe: 1,
-      });
-
-      ticks.on("message", (msg) => {
-        const { tick } = msg;
-        candleSeries.current.update({
-          time: tick.epoch,
-          open: tick.quote,
-          high: tick.quote,
-          low: tick.quote,
-          close: tick.quote,
-        });
-      });
+    ws.onopen = () => {
+      const request = {
+        ticks_history: 'R_100',
+        adjust_start_time: 1,
+        count: 100,
+        end: 'latest',
+        start: 1,
+        style: 'candles',
+        subscribe: 1
+      };
+      ws.send(JSON.stringify(request));
     };
 
-    getMarketData();
+    ws.onmessage = (event) => {
+      const response = JSON.parse(event.data);
+      if (response.candles) {
+        const candles = response.candles.map(candle => ({
+          time: candle.epoch,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+        }));
+        candleSeries.setData(candles);
+      } else if (response.tick) {
+        candleSeries.update({
+          time: response.tick.epoch,
+          open: response.tick.quote,
+          high: response.tick.quote,
+          low: response.tick.quote,
+          close: response.tick.quote,
+        });
+      }
+    };
 
     return () => {
-      if (chart.current) chart.current.remove();
+      ws.close();
     };
   }, []);
 
-  return <div ref={chartContainerRef} />;
-};
+  return (
+    <div ref={chartContainerRef} />
+  );
+}
 
 export default Chart;
