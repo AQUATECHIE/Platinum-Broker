@@ -1,64 +1,75 @@
-import React, { useEffect, useRef } from "react";
-import { createChart } from "lightweight-charts";
+import React, { useEffect, useRef } from 'react';
+import { createChart } from 'lightweight-charts';
 
-function Chart() {
-  const chartContainerRef = useRef();
-  const chartRef = useRef();
+const Chart = () => {
+  const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
+  const candleSeriesRef = useRef(null);
 
   useEffect(() => {
-    const chart = createChart(chartContainerRef.current, {
-      width: 600,
-      height: 400,
+    // Initialize the chart
+    chartRef.current = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
     });
+    candleSeriesRef.current = chartRef.current.addCandlestickSeries();
 
-    const candleSeries = chart.addCandlestickSeries();
-    chartRef.current = chart;
-
+    // WebSocket connection
     const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=67003');
 
     ws.onopen = () => {
-      const request = {
-        ticks_history: 'R_100',
+      console.log('WebSocket connection established.');
+      ws.send(JSON.stringify({
+        ticks_history: "R_100",
         adjust_start_time: 1,
         count: 100,
-        end: 'latest',
-        start: 1,
-        style: 'candles',
-        subscribe: 1
-      };
-      ws.send(JSON.stringify(request));
+        end: "latest",
+        granularity: 60, // 1-minute candlestick
+        style: "candles",
+        subscribe: 1,
+      }));
     };
 
     ws.onmessage = (event) => {
-      const response = JSON.parse(event.data);
-      if (response.candles) {
-        const candles = response.candles.map(candle => ({
-          time: candle.epoch,
-          open: candle.open,
-          high: candle.high,
-          low: candle.low,
-          close: candle.close,
-        }));
-        candleSeries.setData(candles);
-      } else if (response.tick) {
-        candleSeries.update({
-          time: response.tick.epoch,
-          open: response.tick.quote,
-          high: response.tick.quote,
-          low: response.tick.quote,
-          close: response.tick.quote,
-        });
+      const data = JSON.parse(event.data);
+
+      if (data.msg_type === 'ohlc') {
+        const ohlc = data.ohlc;
+
+        // Update chart with new data
+        const candleData = {
+          time: ohlc.epoch,
+          open: parseFloat(ohlc.open),
+          high: parseFloat(ohlc.high),
+          low: parseFloat(ohlc.low),
+          close: parseFloat(ohlc.close),
+        };
+        candleSeriesRef.current.update(candleData);
       }
     };
 
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed.');
+    };
+
+    // Resize chart on window resize
+    const handleResize = () => {
+      chartRef.current.resize(chartContainerRef.current.clientWidth, 300);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup on component unmount
     return () => {
       ws.close();
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  return (
-    <div ref={chartContainerRef} />
-  );
-}
+  return <div ref={chartContainerRef} style={{ position: 'relative', width: '100%' }} />;
+};
 
 export default Chart;
