@@ -1,39 +1,70 @@
-// /src/components/TradeButtons.js
-import React from 'react';
-import WebSocketService from "../services/Api.js"
+// /src/components/TradingControls.js
+import React, { useState, useEffect } from 'react';
+import { createWebSocket, sendProposalRequest, sendBuyRequest, sendSellRequest } from '../services/Api.js';
 
-const BuySellButton = () => {
+const TradingControls = () => {
+  const [ws, setWs] = useState(null);
+  const [proposalId, setProposalId] = useState(null);
+  const [contractId, setContractId] = useState(null);
 
-    const handleBuy = () => {
-      console.log('Buy action triggered');
-      
-      // Send buy command via WebSocket
-      WebSocketService.send({
-        action: 'buy',
-        symbol: 'R_100',
-        amount: 10,
-        // Add any additional parameters required by your backend
-      });
+  useEffect(() => {
+    const webSocket = createWebSocket();
+    setWs(webSocket);
+
+    webSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.msg_type === 'proposal') {
+        setProposalId(data.proposal.id);
+      }
+
+      if (data.msg_type === 'buy') {
+        setContractId(data.buy.contract_id);
+      }
     };
-  
-    const handleSell = () => {
-      console.log('Sell action triggered');
-      
-      // Send sell command via WebSocket
-      WebSocketService.send({
-        action: 'sell',
-        symbol: 'R_100',
-        amount: 10,
-        // Add any additional parameters required by your backend
-      });
+
+    return () => {
+      webSocket.close();
     };
-  
-    return (
-      <div>
-        <button onClick={handleBuy}>Buy</button>
-        <button onClick={handleSell}>Sell</button>
-      </div>
-    );
+  }, []);
+
+  const handleBuyClick = () => {
+    const contractParams = {
+      proposal: 1,
+      amount: 10,
+      basis: "stake",
+      contract_type: "CALL",
+      currency: "USD",
+      duration: 5,
+      duration_unit: "t",
+      symbol: "frxEURUSD"
+    };
+    sendProposalRequest(ws, contractParams);
   };
-  
-  export default BuySellButton;
+
+  const handleConfirmBuyClick = () => {
+    if (proposalId) {
+      sendBuyRequest(ws, proposalId);
+    } else {
+      alert("Proposal ID not available.");
+    }
+  };
+
+  const handleSellClick = () => {
+    if (contractId) {
+      sendSellRequest(ws, contractId);
+    } else {
+      alert("Contract ID not available.");
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleBuyClick}>Request Buy Proposal</button>
+      <button onClick={handleConfirmBuyClick}>Confirm Buy</button>
+      <button onClick={handleSellClick}>Sell</button>
+    </div>
+  );
+};
+
+export default TradingControls;
