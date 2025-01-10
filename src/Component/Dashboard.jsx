@@ -1,7 +1,7 @@
 import Chart from "../Component/Chart.jsx";
 // import Controls from "../Component/Controls.jsx";
 import TradingControls from "./BuySellButton.jsx";
-import TradeHistory from "./History.jsx";
+// import TradeHistory from "./History.jsx";
 import '../Style/Dashboard.css'
 
 
@@ -11,7 +11,7 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <Chart  />
       <TradingControls  />
-      <TradeHistory />
+      {/* <TradeHistory /> */}
     </div>
   );
 };
