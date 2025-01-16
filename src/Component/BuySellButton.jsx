@@ -1,102 +1,167 @@
-// /src/components/TradingControls.js
-import React, { useState, useEffect } from 'react';
-import { createWebSocket, sendProposalRequest, sendBuyRequest, sendSellRequest } from '../services/Api.js';
+import React, { useState } from "react";
 
-const TradingControls = () => {
-  const [ws, setWs] = useState(null);
-  const [proposalId, setProposalId] = useState(null);
-  const [contractId, setContractId] = useState(null);
-  const [buyResponse, setBuyResponse] = useState(null); // New state to hold buy response
+const BuySellButton = ({ symbol, contracts }) => {
+  const [selectedContract, setSelectedContract] = useState("");
+  const [duration, setDuration] = useState("");
+  const [amount, setAmount] = useState("");
+  const [proposal, setProposal] = useState(null);
+  const apiToken = "pRzG9yBetZNnLv1"; // Replace with your actual API token
 
-  useEffect(() => {
-    const webSocket = createWebSocket();
-    setWs(webSocket);
+  const handleBuy = () => {
+    const contract = contracts.find(
+      (c) => c.contract_type === selectedContract
+    );
+    if (!contract) {
+      alert("Invalid contract type selected.");
+      return;
+    }
 
-    webSocket.onmessage = (event) => {
+    const minDuration = parseInt(contract.min_contract_duration);
+    const maxDuration = parseInt(contract.max_contract_duration);
+    const selectedDuration = parseInt(duration);
 
+    if (selectedDuration < minDuration || selectedDuration > maxDuration) {
+      alert(`Duration must be between ${minDuration} and ${maxDuration}.`);
+      return;
+    }
+
+    const ws = new WebSocket(
+      "wss://ws.binaryws.com/websockets/v3?app_id=67003"
+    );
+
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          authorize: apiToken, // Send the authorization request with the token
+        })
+      );
+
+      ws.send(
+        JSON.stringify({
+          proposal: 1,
+          amount: parseFloat(amount),
+          basis: "stake",
+          contract_type: selectedContract,
+          currency: "USD",
+          duration: selectedDuration,
+          duration_unit: "t",
+          symbol: symbol,
+        })
+      );
+    };
+
+    ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("Received data:", data);
+      if (data.error) {
+        console.error("Error in proposal response:", data.error.message);
+        alert(`Error: ${data.error.message}`);
+      } else if (data.proposal) {
+        console.log("Proposal received:", data.proposal);
+        setProposal(data.proposal);
+      }
+      ws.close();
+    };
 
-      if (data.msg_type === "proposal") {
-        if (data.error) {
-          console.warn("Error in proposal response:", data.error);
-          // Handle error (e.g., display an error message to the user)
-        } else if (data.proposal && data.proposal.id) {
-          console.log("Proposal ID:", data.proposal.id);
-          // Proceed with buy logic using proposal.id
-        } else {
-          console.warn("Received proposal without a valid ID:", data);
-        }
-      } else if (data.ohlc && data.ohlc.id) {
-        console.log("OHLC ID:", data.ohlc.id);
-        // Use ohlc.id for your logic
-      } else if (data.subscription && data.subscription.id) {
-        console.log("Subscription ID:", data.subscription.id);
-        // Use subscription.id if relevant
+    ws.onerror = (error) => {
+      console.error("WebSocket Error:", error);
+    };
+  };
+
+  const confirmBuy = () => {
+    const ws = new WebSocket(
+      "wss://ws.binaryws.com/websockets/v3?app_id=67003"
+    );
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          authorize: apiToken, // Send the authorization request with the token
+        })
+      );
+
+      ws.send(
+        JSON.stringify({
+          buy: proposal.id,
+          price: proposal.ask_price,
+        })
+      );
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.error) {
+        console.error("Error in buy response:", data.error.message);
+        alert(`Error: ${data.error.message}`);
       } else {
-        console.warn("Received data without a valid ID:", data);
+        console.log("Buy successful:", data);
+        alert("Contract purchased successfully!");
       }
-
-
-      if (data.msg_type === 'buy') {
-        setBuyResponse(data.buy); // Store the buy response
-        setContractId(data.buy.contract_id);
-      }
+      ws.close();
     };
-    
-    
 
-    return () => {
-      webSocket.close();
+    ws.onerror = (error) => {
+      console.error("WebSocket Error:", error);
     };
-  }, []);
-
-  const handleBuyClick = () => {
-    const contractParams = {
-      proposal: 1,
-      amount: 10,
-      basis: "stake",
-      contract_type: "CALL",
-      currency: "USD",
-      duration: 5,
-      duration_unit: "t",
-      symbol: "frxEURUSD"
-    };
-    sendProposalRequest(ws, contractParams);
-  };
-
-  const handleConfirmBuyClick = () => {
-    if (proposalId) {
-      sendBuyRequest(ws, proposalId);
-    } else {
-      alert("Proposal ID not available. Please request a proposal first.");
-    }
-  };
-
-  const handleSellClick = () => {
-    if (contractId) {
-      sendSellRequest(ws, contractId);
-    } else {
-      alert("Contract ID not available.");
-    }
   };
 
   return (
     <div>
-      <button onClick={handleBuyClick}>Request Buy Proposal</button>
-      <button onClick={handleConfirmBuyClick}>Confirm Buy</button>
-      <button onClick={handleSellClick}>Sell</button>
+      <h3>Buy Contract</h3>
+      <div>
+        <label>
+          Contract Type:
+          <select
+            value={selectedContract}
+            onChange={(e) => setSelectedContract(e.target.value)}
+          >
+            <option value="">Select Contract</option>
+            {contracts.map((contract, index) => (
+              <option
+                key={`${contract.contract_type}-${index}`} // Combine contract type and index for uniqueness
+                value={contract.contract_type}
+              >
+                {contract.contract_display}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div>
+        <label>
+          Duration:
+          <input
+            type="number"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="Enter duration"
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Amount:
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Enter amount"
+          />
+        </label>
+      </div>
+      <button onClick={handleBuy}>Request Proposal</button>
 
-      {buyResponse && (
+      {proposal && (
         <div>
-          <h3>Buy Response</h3>
-          <p>Contract ID: {buyResponse.contract_id}</p>
-          <p>Details: {JSON.stringify(buyResponse)}</p>
+          <h4>Proposal Details</h4>
+          <p>Price: {proposal.ask_price}</p>
+          <p>Start: {new Date(proposal.date_start * 1000).toLocaleString()}</p>
+          <p>
+            Expiry: {new Date(proposal.date_expiry * 1000).toLocaleString()}
+          </p>
+          <button onClick={confirmBuy}>Confirm Buy</button>
         </div>
       )}
     </div>
   );
 };
 
-
-export default TradingControls;
+export default BuySellButton;
