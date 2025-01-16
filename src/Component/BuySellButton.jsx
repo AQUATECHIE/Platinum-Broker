@@ -17,9 +17,26 @@ const TradingControls = () => {
       const data = JSON.parse(event.data);
       console.log("Received data:", data);
 
-      if (data.msg_type === 'proposal') {
-        setProposalId(data.proposal.id);
+      if (data.msg_type === "proposal") {
+        if (data.error) {
+          console.warn("Error in proposal response:", data.error);
+          // Handle error (e.g., display an error message to the user)
+        } else if (data.proposal && data.proposal.id) {
+          console.log("Proposal ID:", data.proposal.id);
+          // Proceed with buy logic using proposal.id
+        } else {
+          console.warn("Received proposal without a valid ID:", data);
+        }
+      } else if (data.ohlc && data.ohlc.id) {
+        console.log("OHLC ID:", data.ohlc.id);
+        // Use ohlc.id for your logic
+      } else if (data.subscription && data.subscription.id) {
+        console.log("Subscription ID:", data.subscription.id);
+        // Use subscription.id if relevant
+      } else {
+        console.warn("Received data without a valid ID:", data);
       }
+
 
       if (data.msg_type === 'buy') {
         setBuyResponse(data.buy); // Store the buy response
