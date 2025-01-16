@@ -13,7 +13,9 @@ const TradingControls = () => {
     setWs(webSocket);
 
     webSocket.onmessage = (event) => {
+
       const data = JSON.parse(event.data);
+      console.log("Received data:", data);
 
       if (data.msg_type === 'proposal') {
         setProposalId(data.proposal.id);
@@ -24,6 +26,8 @@ const TradingControls = () => {
         setContractId(data.buy.contract_id);
       }
     };
+    
+    
 
     return () => {
       webSocket.close();

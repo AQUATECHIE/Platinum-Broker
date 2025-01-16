@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { createChart } from "lightweight-charts";
 
-const Chart = () => {
+const Chart = ({ trades }) => {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
@@ -36,6 +36,7 @@ const Chart = () => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log("Received data:", data);
 
       if (data.msg_type === "ohlc") {
         const ohlc = data.ohlc;
@@ -72,6 +73,24 @@ const Chart = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  
+
+  useEffect(() => {
+    if (trades && candleSeriesRef.current) {
+      trades.forEach((trade) => {
+        candleSeriesRef.current.setMarkers([
+          {
+            time: trade.time,
+            position: trade.type === "buy" ? "belowBar" : "aboveBar",
+            color: trade.type === "buy" ? "green" : "red",
+            shape: trade.type === "buy" ? "arrowUp" : "arrowDown",
+            text: `${trade.type.toUpperCase()} ${trade.amount}`,
+          },
+        ]);
+      });
+    }
+  }, [trades]);
 
   return (
     <div

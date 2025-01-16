@@ -1,4 +1,4 @@
-import Chart from "../Component/Chart.jsx";
+import TradingChart from "./Chart.jsx";
 // import Controls from "../Component/Controls.jsx";
 import TradingControls from "./BuySellButton.jsx";
 // import TradeHistory from "./History.jsx";
@@ -9,7 +9,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <Chart  />
+      <TradingChart />
       <TradingControls  />
       {/* <TradeHistory /> */}
     </div>
