@@ -15,7 +15,7 @@ function Login() {
     setError("");
 
     try {
-      const response = await axios.post("https://your-backend-url.com/login", {
+      const response = await axios.post("https://platinum-backend-project.onrender.com/api/login", {
         email,
         password,
       });
