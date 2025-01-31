@@ -24,7 +24,7 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "https://platinum-backend-project.onrender.com/api/register",
+        "https://your-backend-url.com/register",
         {
           name,
           email,
